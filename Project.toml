@@ -1,6 +1,6 @@
 name = "DifferentialEvolution"
 uuid = "b32b9a76-dd00-46da-ba81-3c2dea8ff9d4"
-authors = ["Lewis Grozinger <l.grozinger2@ncl.ac.uk>"]
+authors = ["Lewis Grozinger <lewis.grozinger@upm.es>"]
 version = "0.1.0"
 
 [deps]
