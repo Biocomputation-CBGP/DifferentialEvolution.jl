@@ -2,10 +2,42 @@ module DifferentialEvolution
 
 using StatsBase
 
+struct EvolutionThreads end
+export EvolutionThreads
+
+struct DiffEv{T<:Number, F<:Function}
+    population::Matrix{T}
+    losses::Vector{T}
+    basefunc::F
+    NP::Int
+    n::Int
+    F::T
+    CR::T
+end
+export DiffEv
+
+function DiffEv(NP, n, F::T, CR::T; strategy=:rand) where {T<:Number}
+    population = rand(T, NP, n)
+    losses = fill(typemax(T), NP)
+    if strategy == :rand
+        return DiffEv(population, losses, randbase, NP, n, F, CR)
+    elseif strategy == :best
+        return DiffEv(population, losses, bestbase, NP, n, F, CR)
+    end
+end
+
 """Pick a random base vector, plus a pair for the difference vector"""
-@views function randbase(population, i, NP)
-    idxs = sample(vcat(1:i-1, i+1:NP), 3; replace=false)
-    return population[idxs, :]
+@views function randbase(alg::DiffEv, i::Int)
+    idxs = sample(deleteat!(collect(1:alg.NP), i), 3; replace=false)
+    return alg.population[idxs, :]
+end
+
+"""Pick the best base vector, plus a pair for the difference vector"""
+@views function bestbase(alg::DiffEv, i::Int)
+    _, j = findmin(alg.losses)
+    idxs = i == j ? [i] : sort([i, j])
+    idxs = sample(deleteat!(collect(1:alg.NP), idxs), 2; replace=false)
+    return alg.population[[j; idxs], :]
 end
 
 """Generate a mutated vector from the base and difference vectors"""
@@ -19,58 +51,42 @@ end
     R = rand(1:length(parent))
     proposal[R] = mutated[R]
     r = rand(length(parent))
-    proposal[r .< CR] = mutated[r .< CR]
+    proposal[r .< CR] .= mutated[r .< CR]
     return proposal
 end
 
-struct EvolutionThreads end
 
-struct DiffEv{T<:Number}
-    population::Matrix{T}
-    fitnesses::Vector{T}
-    NP::Int
-    n::Int
-    F::T
-    CR::T
-end
-export DiffEv
-
-function DiffEv(NP, n, F::T, CR::T) where {T<:Number}
-    population = rand(T, NP, n)
-    fitnesses = fill(typemax(T), NP)
-    DiffEv{T}(population, fitnesses, NP, n, F, CR)
-end
-
-function (X::DiffEv{T})(f) where {T<:Number}
-    for x in 1:X.NP
-        parent = @view X.population[x, :]
-        mutant = mutated(randbase(X.population, x, X.NP), X.F)
-        proposal = crossover(parent, mutant, X.CR)
-
-        fitness = f(proposal)
-        if fitness <= X.fitnesses[x]
-            X.population[x, :] .= proposal
-            X.fitnesses[x] = fitness
-        end
+function evolve!(alg::DiffEv, f::F, i::Int) where {F<:Function}
+    best = alg.population[i, :]
+    mutant = mutated(alg.basefunc(alg, i), alg.F)
+    proposal = crossover(best, mutant, alg.CR)
+    alg.losses[i] = f(best)
+    loss = f(proposal)
+    if loss <= alg.losses[i]
+        alg.losses[i] = loss
+        best = mutant
     end
-    return X.fitnesses
+    return best
 end
 
-function (X::DiffEv{T})(f, ::Type{EvolutionThreads}) where {T<:Number}
-    next_generation = copy(X.population)
-    Threads.@threads for x in 1:X.NP
-        parent = @view X.population[x, :]
-        mutant = mutated(randbase(X.population, x, X.NP), X.F)
-        proposal = crossover(parent, mutant, X.CR)
-        
-        fitness = f(proposal)
-        if fitness <= X.fitnesses[x]
-            next_generation[x, :] .= proposal
-            X.fitnesses[x] = fitness
-        end
+function evolve!(alg::DiffEv, f::F) where {F<:Function}
+    next_generation = copy(alg.population)
+    for i in 1:alg.NP
+        next_generation[i, :] .= evolve!(alg, f, i)
     end
-    X.population .= next_generation
-    return X.fitnesses
+    alg.population .= next_generation
+    return alg.losses
 end
+
+function evolve!(alg::DiffEv, f::F, ::Type{EvolutionThreads}) where {F<:Function}
+    next_generation = copy(alg.population)
+    Threads.@threads for i in 1:alg.NP
+        next_generation[i, :] .= evolve!(alg, f, i)
+    end
+    alg.population .= next_generation
+    return alg.losses
+end
+
+export evolve!
 
 end # module DifferentialEvolution
