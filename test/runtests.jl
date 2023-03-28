@@ -9,7 +9,7 @@ using DifferentialEvolution
 
     alg = DiffEv(16, 2, 0.8, 0.9)
     for _ in 1:128
-        evolve(alg, rosenbrock)
+        evolve!(alg, rosenbrock)
     end
 
     @test all(x -> isapprox(x, 0; atol=1e-3), alg.losses)
@@ -24,7 +24,7 @@ end
 
     alg = DiffEv(16, 2, 0.8, 0.9)
     for _ in 1:128
-        evolve(alg, rosenbrock, EvolutionThreads)
+        evolve!(alg, rosenbrock, EvolutionThreads)
     end
 
     @test all(x -> isapprox(x, 0; atol=1e-3), alg.losses)
@@ -39,7 +39,7 @@ end
 
     alg = DiffEv(16, 2, 0.8, 0.9; strategy=:best)
     for _ in 1:128
-        evolve(alg, rosenbrock)
+        evolve!(alg, rosenbrock)
     end
 
     @test all(x -> isapprox(x, 0; atol=1e-3), alg.losses)
@@ -54,7 +54,7 @@ end
 
     alg = DiffEv(16, 2, 0.8, 0.9; strategy=:best)
     for _ in 1:128
-        evolve(alg, rosenbrock)
+        evolve!(alg, rosenbrock)
     end
 
     @test all(x -> isapprox(x, 0; atol=1e-3), alg.losses)
@@ -73,7 +73,7 @@ end
 
     alg = DiffEv(16, 2, 0.8, 0.9)
     for _ in 1:128
-        evolve(alg, ackley)
+        evolve!(alg, ackley)
     end
 
     @test all(x -> isapprox(x, 0; atol=1e-3), alg.losses)
@@ -92,7 +92,7 @@ end
 
     alg = DiffEv(16, 2, 0.8, 0.9)
     for _ in 1:128
-        evolve(alg, ackley, EvolutionThreads)
+        evolve!(alg, ackley, EvolutionThreads)
     end
 
     @test all(x -> isapprox(x, 0; atol=1e-3), alg.losses)
@@ -111,7 +111,7 @@ end
 
     alg = DiffEv(16, 2, 0.8, 0.9; strategy=:best)
     for _ in 1:128
-        evolve(alg, ackley)
+        evolve!(alg, ackley)
     end
 
     @test all(x -> isapprox(x, 0; atol=1e-3), alg.losses)
@@ -130,7 +130,7 @@ end
 
     alg = DiffEv(16, 2, 0.8, 0.9; strategy=:best)
     for _ in 1:128
-        evolve(alg, ackley, EvolutionThreads)
+        evolve!(alg, ackley, EvolutionThreads)
     end
 
     @test all(x -> isapprox(x, 0; atol=1e-3), alg.losses)
