@@ -60,7 +60,7 @@ function evolve!(alg::DiffEv, f::F, i::Int) where {F<:Function}
     best = alg.population[i, :]
     mutant = mutated(alg.basefunc(alg, i), alg.F)
     proposal = crossover(best, mutant, alg.CR)
-    # alg.losses[i] = f(best) # this line is an extra function eval
+    alg.losses[i] = f(best) # this line is an extra function eval, but might be important for stochastic f
     loss = f(proposal)
     if loss <= alg.losses[i]
         alg.losses[i] = loss
